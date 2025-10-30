@@ -74,9 +74,14 @@ console.log(`Active hours: ${START_HOUR}:00 (${START_HOUR === 12 ? 'noon' : STAR
 console.log(`Timezone: ${TIMEZONE}`);
 console.log(`Current time: ${new Date().toLocaleString('en-US', { timeZone: TIMEZONE })}\n`);
 
+// Track last update to prevent duplicate runs
+let lastUpdateMinute = -1;
+
 // Run immediately if within active hours
 if (isWithinActiveHours()) {
   console.log('Within active hours - running initial update...');
+  const { minute } = getCurrentTimeInTimezone();
+  lastUpdateMinute = minute;
   updateVestaboards().catch(console.error);
 } else {
   const minutesUntil = minutesUntilNextActive();
@@ -90,7 +95,9 @@ setInterval(() => {
   if (isWithinActiveHours()) {
     // Check if it's time for an update (every 25 minutes within the hour)
     // Run at :00, :25, :50 minutes past the hour
-    if (minute % UPDATE_INTERVAL === 0 && second < 60) {
+    // Only run if we haven't already run this minute
+    if (minute % UPDATE_INTERVAL === 0 && minute !== lastUpdateMinute) {
+      lastUpdateMinute = minute;
       const timeStr = date.toLocaleString('en-US', { timeZone: TIMEZONE });
       console.log(`\n[${timeStr}] Running scheduled update...`);
       updateVestaboards()
@@ -108,7 +115,8 @@ setInterval(() => {
     }
   } else {
     // Log once per hour when outside active window
-    if (minute === 0 && second < 60) {
+    if (minute === 0 && minute !== lastUpdateMinute) {
+      lastUpdateMinute = minute;
       const minutesUntil = minutesUntilNextActive();
       const timeStr = date.toLocaleString('en-US', { timeZone: TIMEZONE });
       console.log(`[${timeStr}] Outside active hours. Next update in ${Math.floor(minutesUntil / 60)}h ${minutesUntil % 60}m`);
