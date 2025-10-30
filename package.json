@@ -1,0 +1,23 @@
+{
+  "name": "bev-fundraiser-vestaboard",
+  "version": "1.0.0",
+  "description": "Automated Vestaboard updates for The Bev fire relief fundraiser",
+  "main": "fundraiser-updater.js",
+  "scripts": {
+    "update": "node fundraiser-updater.js",
+    "start": "node fundraiser-scheduler.js",
+    "test": "node fundraiser-updater.js",
+    "deploy": "node deploy-to-digitalocean-v2.js"
+  },
+  "keywords": [
+    "vestaboard",
+    "fundraiser",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
