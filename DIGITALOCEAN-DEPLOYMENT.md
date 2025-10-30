@@ -292,7 +292,17 @@ Already at the minimum! But here are some tips:
 
 If you make changes locally and want to deploy them:
 
-**Method 1: Git (recommended)**
+**Method 1: Redeploy (easiest)**
+```bash
+# From your local machine
+npm run deploy
+```
+This will automatically:
+- Delete the old droplet
+- Create a new droplet with the latest code
+- Set everything up fresh (~5 minutes)
+
+**Method 2: Git (faster, no downtime)**
 ```bash
 # On your local machine: commit and push changes
 git add .
@@ -307,7 +317,7 @@ npm install  # Only if package.json changed
 pm2 restart bev-fundraiser
 ```
 
-**Method 2: SCP**
+**Method 3: SCP**
 ```bash
 # From your local machine
 scp -r . root@YOUR_DROPLET_IP:/root/bev-fundraiser/

@@ -83,13 +83,17 @@ npm run deploy
 ```
 
 This automated script will:
-1. Create a $4/month Digital Ocean droplet
-2. Install Node.js and dependencies
-3. Deploy your code
-4. Set up PM2 for 24/7 operation
-5. Configure auto-start on reboot
+1. Check for existing droplets with the same name
+2. Delete old droplets (if found) to avoid duplicate charges
+3. Create a $4/month Digital Ocean droplet
+4. Install Node.js and dependencies
+5. Deploy your code
+6. Set up PM2 for 24/7 operation
+7. Configure auto-start on reboot
 
 **Total time**: ~5 minutes
+
+**Note**: Running `npm run deploy` will automatically delete any existing droplet named "bev-fundraiser" and create a fresh one with the latest code. This ensures you only ever have one active droplet.
 
 See [DIGITALOCEAN-DEPLOYMENT.md](./DIGITALOCEAN-DEPLOYMENT.md) for detailed instructions.
 
@@ -111,7 +115,10 @@ All configuration is managed through environment variables in `.env`:
 UPDATE_INTERVAL_MINUTES=25  # How often to update
 START_HOUR=12               # Start at noon
 END_HOUR=22                 # Stop at 10pm (22:00)
+TIMEZONE=America/New_York   # Timezone for schedule (EST/EDT)
 ```
+
+**Note**: The scheduler uses the specified timezone, not the server's timezone. This ensures updates happen at the correct local time even when running on servers in different regions (e.g., Digital Ocean's default UTC).
 
 ### Google Sheets
 ```env
@@ -170,8 +177,12 @@ tail -f /var/log/user-data.log
 - Ensure SHEET_RANGE includes both dates and "Total Raised"
 
 ### Vestaboard Issues
-- Message duplicate error = board already showing that message (normal)
-- Invalid credentials = check .env file has correct API keys
+- **Message duplicate error** = board already showing that message (normal)
+- **Invalid credentials** = check .env file has correct API keys
+- **Rate limited (503 error)** = too many requests in short time
+  - The updater automatically retries with exponential backoff (5s, 10s, 20s)
+  - Avoid running `npm run test` repeatedly - wait at least 1 minute between tests
+  - Production scheduler runs every 25 minutes, well within rate limits
 - Both boards use Subscription API, not Read/Write API
 
 ### Deployment Issues

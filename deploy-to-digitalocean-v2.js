@@ -100,7 +100,31 @@ async function deploy() {
 
     console.log('✓ Digital Ocean API token found\n');
 
-    console.log('🚀 Creating droplet with auto-setup...');
+    // Check for existing droplets with the same name
+    console.log('🔍 Checking for existing droplets...');
+    const listResponse = await doAPI.get('/droplets');
+    const existingDroplets = listResponse.data.droplets.filter(d => d.name === DROPLET_NAME);
+
+    if (existingDroplets.length > 0) {
+      console.log(`⚠️  Found ${existingDroplets.length} existing droplet(s) named "${DROPLET_NAME}"`);
+      for (const droplet of existingDroplets) {
+        console.log(`   - ID: ${droplet.id}, IP: ${droplet.networks.v4[0]?.ip_address || 'N/A'}, Status: ${droplet.status}`);
+      }
+
+      console.log('\n🗑️  Deleting old droplet(s)...');
+      for (const droplet of existingDroplets) {
+        await doAPI.delete(`/droplets/${droplet.id}`);
+        console.log(`   ✓ Deleted droplet ${droplet.id}`);
+      }
+
+      // Wait a moment for deletion to complete
+      console.log('   Waiting for cleanup to complete...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    } else {
+      console.log('✓ No existing droplets found with this name\n');
+    }
+
+    console.log('🚀 Creating new droplet with auto-setup...');
     console.log(`   Name: ${DROPLET_NAME}`);
     console.log(`   Size: ${SIZE} ($4/month)`);
     console.log(`   Region: ${REGION}`);

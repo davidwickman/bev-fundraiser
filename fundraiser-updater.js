@@ -184,10 +184,21 @@ function formatMessage(amount, date) {
 }
 
 /**
+ * Sleep utility for retry delays
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
  * Post message to a Vestaboard using Subscription API (Installable)
  * This API accepts a 6x22 character array for precise tile control
+ * Includes retry logic for rate limiting (503 errors)
  */
-async function postToVestaboard(board, message) {
+async function postToVestaboard(board, message, retryCount = 0) {
+  const MAX_RETRIES = 3;
+  const BASE_DELAY = 5000; // 5 seconds
+
   try {
     const url = `https://platform.vestaboard.com/subscriptions/${board.subscriptionId}/message`;
 
@@ -206,7 +217,24 @@ async function postToVestaboard(board, message) {
     console.log(`✓ Successfully updated ${board.name}`);
     return response.data;
   } catch (error) {
-    console.error(`✗ Error updating ${board.name}:`, error.response?.data || error.message);
+    const errorData = error.response?.data;
+    const status = error.response?.status;
+
+    // Handle rate limiting (503 errors)
+    if (status === 503 && retryCount < MAX_RETRIES) {
+      const delay = BASE_DELAY * Math.pow(2, retryCount); // Exponential backoff: 5s, 10s, 20s
+      console.log(`⚠ ${board.name} rate limited. Retrying in ${delay / 1000}s... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      await sleep(delay);
+      return postToVestaboard(board, message, retryCount + 1);
+    }
+
+    // Handle duplicate message (not an error - board already shows this message)
+    if (errorData?.message?.includes('fingerprint matches')) {
+      console.log(`ℹ ${board.name} already displaying this message (no update needed)`);
+      return errorData;
+    }
+
+    console.error(`✗ Error updating ${board.name}:`, errorData || error.message);
     throw error;
   }
 }
