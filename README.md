@@ -88,7 +88,7 @@ This automated script will:
 3. Create a $4/month Digital Ocean droplet
 4. Install Node.js and dependencies
 5. Deploy your code
-6. Set up PM2 for 24/7 operation
+6. Set up systemd service for 24/7 operation
 7. Configure auto-start on reboot
 
 **Total time**: ~5 minutes
@@ -159,9 +159,9 @@ const line1 = textToCharCodes('Help Rebuild', CHAR_CODES.ORANGE, 2);
 
 ### Check Status
 ```bash
-pm2 status              # App status
-pm2 logs bev-fundraiser # Live logs
-pm2 restart bev-fundraiser  # Restart if needed
+systemctl status bev-fundraiser    # App status
+journalctl -u bev-fundraiser -f    # Live logs
+systemctl restart bev-fundraiser   # Restart if needed
 ```
 
 ### View Setup Log

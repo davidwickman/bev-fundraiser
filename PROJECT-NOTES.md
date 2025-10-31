@@ -240,12 +240,12 @@ DIGITALOCEAN_TOKEN=dop_v1_...
 
 ### Process Management
 
-**PM2 Configuration**:
-- Process name: `bev-fundraiser`
-- Auto-restart on crash
+**systemd Service**:
+- Service name: `bev-fundraiser`
+- Auto-restart on crash (RestartSec=10)
 - Auto-start on server reboot
-- Log rotation built-in
-- Status monitoring via `pm2 status`
+- Logs via journalctl
+- Status monitoring via `systemctl status`
 
 ---
 
@@ -289,11 +289,11 @@ POST /subscriptions/{id}/message         # Update board
 - Makes deployment to multiple environments easier
 - Security best practice
 
-### 4. PM2 is Essential for Node.js
+### 4. systemd is Reliable for Node.js Services
 - Keeps app running 24/7
 - Auto-restart on crashes
-- Easy log management
-- Simple monitoring
+- Built into Linux (no extra dependencies)
+- Prevents multiple instances from spawning
 
 ### 5. Schedule Logic
 - Better to have app self-manage schedule

@@ -118,19 +118,45 @@ If both work, you're ready for production!
 
 ---
 
-### Step 7: Install PM2 & Run 24/7
+### Step 7: Set Up systemd Service & Run 24/7
 
 ```bash
-# Install PM2 globally
-npm install -g pm2
+# Create systemd service
+sudo nano /etc/systemd/system/bev-fundraiser.service
+```
 
-# Start the app
-cd /root/bev-fundraiser
-pm2 start fundraiser-scheduler.js --name bev-fundraiser
+Paste this configuration:
+```ini
+[Unit]
+Description=The Bev Fundraiser Vestaboard Updater
+After=network.target
 
-# Configure PM2 to start on boot
-pm2 startup systemd
-pm2 save
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/bev-fundraiser
+ExecStart=/usr/bin/node /root/bev-fundraiser/fundraiser-scheduler.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bev-fundraiser
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Save and exit (Ctrl+X, Y, Enter), then:
+
+```bash
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable service to start on boot
+sudo systemctl enable bev-fundraiser
+
+# Start the service
+sudo systemctl start bev-fundraiser
 ```
 
 ---
@@ -139,13 +165,13 @@ pm2 save
 
 ```bash
 # View real-time logs
-pm2 logs bev-fundraiser
+journalctl -u bev-fundraiser -f
 
 # Check status
-pm2 status
+systemctl status bev-fundraiser
 
 # Restart if needed
-pm2 restart bev-fundraiser
+systemctl restart bev-fundraiser
 ```
 
 ---
@@ -164,22 +190,25 @@ Your fundraiser updater is now running 24/7 on Digital Ocean for $4/month!
 
 ```bash
 # View logs
-pm2 logs bev-fundraiser
+journalctl -u bev-fundraiser -f
 
-# Monitor CPU/memory
-pm2 monit
+# Check status and resource usage
+systemctl status bev-fundraiser
 
 # Restart app
-pm2 restart bev-fundraiser
+systemctl restart bev-fundraiser
 
 # Stop app
-pm2 stop bev-fundraiser
+systemctl stop bev-fundraiser
+
+# Start app
+systemctl start bev-fundraiser
 
 # Update the code (if using git)
 cd /root/bev-fundraiser
 git pull
 npm install
-pm2 restart bev-fundraiser
+systemctl restart bev-fundraiser
 ```
 
 ---
@@ -205,10 +234,13 @@ su - bevuser
 sudo mv /root/bev-fundraiser /home/bevuser/
 cd /home/bevuser/bev-fundraiser
 
-# Restart PM2 as this user
-pm2 start fundraiser-scheduler.js --name bev-fundraiser
-pm2 startup
-pm2 save
+# Update systemd service to run as bevuser
+sudo nano /etc/systemd/system/bev-fundraiser.service
+# Change "User=root" to "User=bevuser"
+# Change WorkingDirectory to /home/bevuser/bev-fundraiser
+
+sudo systemctl daemon-reload
+sudo systemctl restart bev-fundraiser
 ```
 
 ---
@@ -244,8 +276,9 @@ This way you'll know if something goes wrong.
 ### App Won't Start
 
 ```bash
-# Check logs
-pm2 logs bev-fundraiser --lines 100
+# Check status and logs
+systemctl status bev-fundraiser
+journalctl -u bev-fundraiser -n 100
 
 # Check if Node.js is installed
 node --version
@@ -254,7 +287,7 @@ node --version
 cd /root/bev-fundraiser
 rm -rf node_modules
 npm install
-pm2 restart bev-fundraiser
+systemctl restart bev-fundraiser
 ```
 
 ### Can't SSH Into Droplet
@@ -314,7 +347,7 @@ ssh root@YOUR_DROPLET_IP
 cd /root/bev-fundraiser
 git pull
 npm install  # Only if package.json changed
-pm2 restart bev-fundraiser
+systemctl restart bev-fundraiser
 ```
 
 **Method 3: SCP**
@@ -325,7 +358,7 @@ scp -r . root@YOUR_DROPLET_IP:/root/bev-fundraiser/
 # Then SSH and restart
 ssh root@YOUR_DROPLET_IP
 cd /root/bev-fundraiser
-pm2 restart bev-fundraiser
+systemctl restart bev-fundraiser
 ```
 
 ---
@@ -336,9 +369,9 @@ Your Bev Fundraiser is now live on Digital Ocean!
 
 **What you have:**
 - ✅ $4/month hosting
-- ✅ 24/7 uptime with PM2
+- ✅ 24/7 uptime with systemd
 - ✅ Auto-restart on crashes
-- ✅ Updates every 25 minutes (noon to 10pm)
+- ✅ Updates every 25 minutes (noon to 10pm EST)
 - ✅ Pulls live data from Google Sheets
 - ✅ Both Vestaboards display beautifully
 

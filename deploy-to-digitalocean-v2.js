@@ -72,18 +72,37 @@ SCHEDULER_EOF
 # Install dependencies
 npm install
 
-# Install PM2
-npm install -g pm2
+# Create systemd service
+cat > /etc/systemd/system/bev-fundraiser.service << 'SERVICE_EOF'
+[Unit]
+Description=The Bev Fundraiser Vestaboard Updater
+After=network.target
 
-# Start the application
-pm2 start fundraiser-scheduler.js --name bev-fundraiser
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/bev-fundraiser
+ExecStart=/usr/bin/node /root/bev-fundraiser/fundraiser-scheduler.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bev-fundraiser
 
-# Configure PM2 to start on boot
-pm2 startup systemd -u root --hp /root
-pm2 save
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+# Reload systemd, enable and start the service
+systemctl daemon-reload
+systemctl enable bev-fundraiser
+systemctl start bev-fundraiser
 
 echo "Setup complete! The Bev Fundraiser is now running."
 echo "IP Address: $(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)"
+echo ""
+echo "To check status: systemctl status bev-fundraiser"
+echo "To view logs: journalctl -u bev-fundraiser -f"
 `;
 
 async function deploy() {
